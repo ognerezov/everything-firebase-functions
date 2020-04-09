@@ -14,7 +14,9 @@ const passwordDao = admin.firestore().collection('passwords').doc('current');
 export const getChapters = functions.region('europe-west3')
     .https.onRequest(async (request, response) => {
     return corsSettings(request,response, async()=>{
-
+            response.setHeader('Access-Control-Allow-Origin', '*');
+            response.setHeader('Access-Control-Allow-Headers', '*');
+            response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
             if(request.method ==='OPTIONS'){
                 response.sendStatus(204);
             }
