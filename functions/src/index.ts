@@ -87,3 +87,51 @@ export const getRules = functions.region('europe-west3')
             response.send(res);
         })
     });
+
+function getRandom(max :number):number{
+    return Math.floor(1 + max* Math.random());
+}
+const QUOTATIONS_LIMIT =4;
+const CHAPTER = 'chapter';
+const QUOTATION = 'quotation';
+const POEM = 'poem';
+
+export const getQuotation = functions.region('europe-west3')
+    .https.onRequest(async (request, response) => {
+        return corsSettings(request,response, async()=>{
+            response.setHeader('Access-Control-Allow-Origin', '*');
+            response.setHeader('Access-Control-Allow-Headers', '*');
+            response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+            if(request.method ==='OPTIONS'){
+                response.sendStatus(204);
+            }
+            const res : any[] =[];
+            try {
+                const maxRecord = await bookDao
+                    .orderBy('number','desc')
+                    .limit(1)
+                    .get();
+                let max =1;
+                maxRecord.forEach(doc=>max=doc.data().number);
+                const numbers = [];
+                for(let i=0; i<QUOTATIONS_LIMIT; i++){
+                    numbers.push(getRandom(max));
+                }
+                const snap = await bookDao
+                    .where('number','in',numbers)
+                    .get();
+                snap.forEach(
+                    doc=>{
+                        const data = doc.data();
+                        data.records = data.records.filter((record :any)  => record.type === CHAPTER || record.type === QUOTATION ||record.type === POEM);
+                        res.push(data)
+                    }
+                );
+            }catch (e) {
+                console.log(e);
+                response.status(500).send(e);
+            }
+            console.log(res);
+            response.send(res);
+        })
+    });
