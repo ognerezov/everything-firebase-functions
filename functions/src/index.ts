@@ -12,6 +12,48 @@ const bookDao = admin.firestore().collection('book');
 const ruleDao = admin.firestore().collection('rules');
 const passwordDao = admin.firestore().collection('passwords').doc('current');
 
+const CHAPTER = 'chapter';
+const REGULAR = 'regular';
+const QUOTATIONS_LIMIT =4;
+const QUOTATION = 'quotation';
+const POEM = 'poem';
+
+const chapterPlaceholder ={
+    level : -1,
+    number : 0,
+    isPlaceholder : true,
+    records :[
+        {
+            number : 0,
+            type : CHAPTER,
+            spans : [
+                {
+                    number : false,
+                    text : ''
+                }
+            ]
+        },
+        {
+            number : 0,
+            type : REGULAR,
+            spans : [
+                {
+                    number : false,
+                    text : 'Статья не обнаружена на сервере, но она уже написана и скоро будет доступна.'
+                }
+            ]
+        },
+    ],
+}
+
+export function getChapterPlaceholder(number : number) {
+  chapterPlaceholder.number = number;
+  chapterPlaceholder.records[0].number = number;
+  chapterPlaceholder.records[1].number = number;
+  chapterPlaceholder.records[0].spans[0].text = number +'';
+  return chapterPlaceholder;
+}
+
 export const getChapters = functions.region('europe-west3')
     .https.onRequest(async (request, response) => {
     return corsSettings(request,response, async()=>{
@@ -43,8 +85,17 @@ export const getChapters = functions.region('europe-west3')
                     .where('number','in',numbers)
                     .get();
                 snap.forEach(
-                    doc=>res.push(doc.data())
+                    doc=>{
+                        const chapter = doc.data();
+                        const number : number = chapter.number;
+                        const index = numbers.indexOf(number);
+                        if(index >=0){
+                            numbers = numbers.splice(index,1);
+                        }
+                        res.push(chapter);
+                    }
                 );
+                numbers.forEach(number=>res.push(getChapterPlaceholder(number)));
             }catch (e) {
                 response.status(500).send(e);
             }
@@ -91,10 +142,6 @@ export const getRules = functions.region('europe-west3')
 function getRandom(max :number):number{
     return Math.floor(1 + max* Math.random());
 }
-const QUOTATIONS_LIMIT =4;
-const CHAPTER = 'chapter';
-const QUOTATION = 'quotation';
-const POEM = 'poem';
 
 export const getQuotation = functions.region('europe-west3')
     .https.onRequest(async (request, response) => {
