@@ -90,7 +90,7 @@ export const getChapters = functions.region('europe-west3')
                         const number : number = chapter.number;
                         const index = numbers.indexOf(number);
                         if(index >=0){
-                            numbers = numbers.splice(index,1);
+                            numbers.splice(index,1);
                         }
                         res.push(chapter);
                     }
